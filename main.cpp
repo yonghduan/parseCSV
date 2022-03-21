@@ -107,6 +107,33 @@ string getZeroOutput(const string lineStr)
     return zeroOutput;
 }
 
+
+float fun(double h){
+
+    long temp;
+
+    /*
+	h*1000是把小数点后三位移到整数部分，+5是为了看是否能够进位。
+	/10是保留两位小数。然后赋值的时候会默认强转把小数去掉了。
+	返回的时候将temp/100是为了保留两位小数点，这时候就实现了四舍五入。
+	其他的舍入方式可参考这个
+	*/
+    temp = (h*1000 + 5)/10;
+
+    return (float) temp/100;
+
+}
+
+
+string remainDecimal(string & str)
+{
+    string::size_type idx;
+    idx = str.find('.');
+    if(idx == string::npos)
+        throw runtime_error("not a decimal error!");
+    return str.substr(0,idx + 3);
+}
+
 string getSensitiveData(vector<vector<string>> sensitiveTable)
 {
      double sum;
@@ -116,7 +143,24 @@ string getSensitiveData(vector<vector<string>> sensitiveTable)
          sum = sum + atof(sensitiveData.c_str());
      }
      double average = sum / 10;
-     return to_string(average);
+     float averageAfterSimilar = fun(average);
+     string averageStr = to_string(averageAfterSimilar);
+     return remainDecimal(averageStr);
+}
+
+string & deleteSpecificChar(string & str,char c)
+{
+    int pos = str.find(c);
+    str.erase(pos,1);
+    return str;
+}
+
+string getLinearity(string & str)
+{
+    vector<string> linearity = splitLineStr(str);
+    string linearityData = linearity[1];
+    string rightLinearityData = deleteSpecificChar(linearityData,'%');
+    return rightLinearityData;
 }
 
 int main() {
@@ -125,11 +169,21 @@ int main() {
       * generated file*/
       ofstream outFile;
       outFile.open("generated.csv",ios::out);
+      if(!outFile)
+      {
+          cout << "file generated create or open failure!" << endl;
+          throw runtime_error("file error!");
+      }
       outFile << "编号" << "," << "零点输出" << "," << "灵敏度" << "," << "线性度（正向）" << "," << "线性度（负向）"
             << "," << "精度（正向）" << "," << "精度（负向）" << "," << "热零点漂移" << "," << "热灵敏度漂移" << endl;
     /**
      * open target file*/
-     ifstream inFile("data4.csv",ios::in);
+     ifstream inFile("data5.csv",ios::in);
+     if(!inFile)
+     {
+         cout << "file data.csv open failure" << endl;
+         throw runtime_error("file error!");
+     }
      string lineStr;
 
      /**
@@ -164,6 +218,7 @@ int main() {
               * record zero output*/
              getline(inFile,lineStr);
              outFile << getZeroOutput(lineStr) << ",";
+             cout << "loop " << loopCount << ": zeroOutput finished" << endl;
              continue;
          }
 
@@ -183,6 +238,7 @@ int main() {
               string sensitiveAverage = getSensitiveData(sensitiveTable);
               outFile << sensitiveAverage << ",";
               recordSensitiveFinished = true;
+              cout << "loop " << loopCount << ": sensitive detect finished" << endl;
               continue;
           }
 
@@ -195,10 +251,36 @@ int main() {
               if(!detectContinuousField(lineStr,"Vout"))
                   throw runtime_error("detect continuous word 线性度 error");
               getline(inFile,lineStr);
-              vector<string> linearity = splitLineStr(lineStr);
 
-              string linearityData = linearity[1];
+              outFile << getLinearity(lineStr) << ",";
+              cout << "loop " << loopCount << ": linearity positive detect finished" << endl;
 
+              for(int i = 0;i < 13;i ++)
+                  getline(inFile,lineStr);
+              if(!detectContinuousField(lineStr,"Vout"))
+                  throw runtime_error("detect continuous word 线性度(negative) error");
+              getline(inFile,lineStr);
+              outFile << getLinearity(lineStr) << ",";
+              recordLinearityFinished = true;
+              cout << "loop " << loopCount << ": linearity negative detect finished" << endl;
+              continue;
+
+          }
+
+          if(detectChildrenString(lineStr,accuracyDetectFlag) && recordLinearityFinished)
+          {
+              for(int i = 0; i < 23;i ++)
+                  getline(inFile,lineStr);
+              if(!detectContinuousField(lineStr,"Vout"))
+                  throw runtime_error("detect continuous word 精度 error");
+
+              getline(inFile,lineStr);
+              outFile << getLinearity(lineStr) << endl;
+              loopStart = false;
+              recordSensitiveFinished = false;
+              recordLinearityFinished = false;
+              cout << "loop " << loopCount << ": accuracy detect finished" << endl;
+              continue;
           }
      }
 
