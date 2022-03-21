@@ -8,6 +8,13 @@ using namespace std;
 
 /**
  * detecting a specific continuous field in a line string */
+
+void trim(string &s)
+{
+    s.erase(0,s.find_first_not_of(" "));
+    s.erase(s.find_last_not_of(" ") + 1);
+}
+
  bool detectContinuousField(const string & lineStr,const string & field)
 {
     string::size_type idx;
@@ -45,6 +52,16 @@ bool detectDiscontinuousField(const string & lineStr,const string & field)
      return true;
 }
 
+bool detectChildrenString(const string & lineStr,vector<string> childrenString)
+{
+     for(string childStr : childrenString)
+     {
+         if(!detectContinuousField(lineStr,childStr))
+             return false;
+     }
+     return true;
+}
+
 string switchNumberFormat(const int loopCount)
 {
      stringstream ss;
@@ -74,14 +91,20 @@ vector<string> splitLineStr(const string & lineStr)
      string str;
      while(getline(ss,str,','))
      {
+         trim(str);
          splitStrInLine.push_back(str);
      }
      return splitStrInLine;
 }
 
+
+
+
 string getZeroOutput(const string lineStr)
 {
-    return splitLineStr(lineStr)[2];
+     string zeroOutput = splitLineStr(lineStr)[2];
+     trim(zeroOutput);
+    return zeroOutput;
 }
 
 string getSensitiveData(vector<vector<string>> sensitiveTable)
@@ -106,16 +129,33 @@ int main() {
             << "," << "精度（正向）" << "," << "精度（负向）" << "," << "热零点漂移" << "," << "热灵敏度漂移" << endl;
     /**
      * open target file*/
-     ifstream inFile("data.vsv",ios::in);
+     ifstream inFile("data4.csv",ios::in);
      string lineStr;
+
+     /**
+      * loop control*/
+
      int loopCount = 0;
      bool loopStart = false;
      bool recordSensitiveFinished = false;
+     bool recordLinearityFinished = false;
+
+     /**
+      * some specific str needed to detect*/
+     const vector<string> zeroDetectFlag = {"Limit Lo","Limit Hi"};
+     const vector<string> sensitiveDetectFlag = {"Sensitive","Vzero"};
+     const vector<string> linearityDetectFlag = {"Vcalc","Delta"};
+     const vector<string> accuracyDetectFlag = {"V1","V2"};
+
+
      while(getline(inFile,lineStr))
      {
          /**
           * zero output */
-         if(detectDiscontinuousField(lineStr,"零点") && !loopStart)
+
+
+         if(detectChildrenString(lineStr,zeroDetectFlag) && !loopStart &&
+                 !detectChildrenString(lineStr,sensitiveDetectFlag))
          {
              loopStart = true;
              loopCount ++;
@@ -123,16 +163,14 @@ int main() {
              /**
               * record zero output*/
              getline(inFile,lineStr);
-             getline(inFile,lineStr);
              outFile << getZeroOutput(lineStr) << ",";
              continue;
          }
 
          /**
           * record sensitive*/
-          if(detectDiscontinuousField(lineStr,"灵敏度") && loopStart)
+          if(detectChildrenString(lineStr,sensitiveDetectFlag) && loopStart)
           {
-              getline(inFile,lineStr);
               /**
                * get ten data*/
               vector<vector<string>> sensitiveTable;
@@ -148,17 +186,19 @@ int main() {
               continue;
           }
 
-          if(detectDiscontinuousField(lineStr,"线性度") && loopStart && recordSensitiveFinished)
+          if(detectChildrenString(lineStr,linearityDetectFlag) && recordSensitiveFinished)
           {
-              for(int i = 0;i < 15;i ++)
+              for(int i = 0;i < 13;i ++)
               {
                   getline(inFile,lineStr);
               }
-              if(!detectContinuousField(lineStr,"线性度"))
+              if(!detectContinuousField(lineStr,"Vout"))
                   throw runtime_error("detect continuous word 线性度 error");
+              getline(inFile,lineStr);
               vector<string> linearity = splitLineStr(lineStr);
+
               string linearityData = linearity[1];
-              linearityData.erase(std::remove(linearityData.begin(),linearityData.end(),'%'),linearityData.end());
+
           }
      }
 
