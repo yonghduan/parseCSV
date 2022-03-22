@@ -3,4 +3,4 @@ project(parseCSV)
 
 set(CMAKE_CXX_STANDARD 11)
 
-add_executable(parseCSV main.cpp)
+add_executable(ExtractData main.cpp)

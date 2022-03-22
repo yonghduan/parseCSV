@@ -3,6 +3,7 @@
 #include<string>
 #include <vector>
 #include <sstream>
+#include<windows.h>
 
 using namespace std;
 
@@ -178,11 +179,13 @@ int main() {
             << "," << "精度（正向）" << "," << "精度（负向）" << "," << "热零点漂移" << "," << "热灵敏度漂移" << endl;
     /**
      * open target file*/
-     ifstream inFile("data4.csv",ios::in);
+     ifstream inFile("data.csv",ios::in);
      if(!inFile)
      {
-         cout << "file data.csv open failure" << endl;
-         throw runtime_error("file error!");
+         SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), FOREGROUND_INTENSITY | FOREGROUND_RED);
+         cout << "Failure! file data.csv open failure.Maybe file not named data.csv or having no csv file in this directory!" << endl;
+         system("pause");
+         return 1;
      }
      string lineStr;
 
@@ -283,7 +286,18 @@ int main() {
               continue;
           }
      }
-     cout << "Successfully Created generated.csv File,Please Close Terminal!" << endl;
+
+     if(loopCount != 0)
+     {
+         SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), FOREGROUND_INTENSITY | FOREGROUND_GREEN);
+         cout << "Successfully! Successfully Created generated.csv File,Please Close Terminal And View it!" << endl;
+     }
+     else
+     {
+         SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), FOREGROUND_INTENSITY | FOREGROUND_RED);
+         cout << "Failure! data.csv doesn't be encoded in UTF-8 or the file doesn't have content!" << endl;
+     }
+
      system("pause");
       return 0;
 }
