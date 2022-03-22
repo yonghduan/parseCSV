@@ -108,7 +108,7 @@ string getZeroOutput(const string lineStr)
 }
 
 
-float fun(double h){
+float similar(double h){
 
     long temp;
 
@@ -143,7 +143,7 @@ string getSensitiveData(vector<vector<string>> sensitiveTable)
          sum = sum + atof(sensitiveData.c_str());
      }
      double average = sum / 10;
-     float averageAfterSimilar = fun(average);
+     float averageAfterSimilar = similar(average);
      string averageStr = to_string(averageAfterSimilar);
      return remainDecimal(averageStr);
 }
@@ -178,7 +178,7 @@ int main() {
             << "," << "精度（正向）" << "," << "精度（负向）" << "," << "热零点漂移" << "," << "热灵敏度漂移" << endl;
     /**
      * open target file*/
-     ifstream inFile("data5.csv",ios::in);
+     ifstream inFile("data4.csv",ios::in);
      if(!inFile)
      {
          cout << "file data.csv open failure" << endl;
@@ -283,6 +283,7 @@ int main() {
               continue;
           }
      }
-
+     cout << "Successfully Created generated.csv File,Please Close Terminal!" << endl;
+     system("pause");
       return 0;
 }
